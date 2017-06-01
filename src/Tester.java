@@ -1,6 +1,3 @@
-import javax.swing.*;
-import java.awt.*;
-
 public class Tester {
     public static void main(String[] args) {
         /*JFrame frame = new JFrame();
@@ -16,6 +13,6 @@ public class Tester {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setVisible(true);*/
         Console c = new Console();
-        c.print("lol");
+        System.out.println(c.readString());
     }
 }

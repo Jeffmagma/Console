@@ -3,18 +3,12 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
-import java.util.*
+import java.util.concurrent.ArrayBlockingQueue
 import javax.swing.*
 
 class Console {
-
-    class ConsoleGraphics : JPanel() {
-
-    }
-
-
     // The keyboard buffer
-    val keyboard_buffer = LinkedList<Char>()
+    val keyboard_buffer = ArrayBlockingQueue<Char>(4096)
     // The JFrame and its components
     val frame: JFrame
     lateinit var graphics: Graphics2D
@@ -56,20 +50,12 @@ class Console {
         const val DEFAULT_COLS = 80
         const val DEFAULT_FONT_SIZE = 14
         const val DEFAULT_TITLE = "Console"
+        val whitespace = arrayOf('\n', '\t', ' ')
     }
 
     // TODO: this prints
     fun print(text: String) {
-        val length = text.length
-        var index = 0
-        var start_pos = current_col
-        while (true) {
-            if (index == length) return
-            while (index < length && text[index] != '\n' && text[index] != '\t' && start_pos + index < cols) index++
-            if (start_pos != index) {
-
-            }
-        }
+        System.out.println("printed: " + text)
     }
 
     @JvmOverloads constructor(font_size: Int = DEFAULT_FONT_SIZE) : this(DEFAULT_ROWS, DEFAULT_COLS, font_size)
@@ -90,11 +76,11 @@ class Console {
         val chars = 0..256
         val char_widths = chars.map { font_metrics.charWidth(it) }
         font_width = char_widths.max() ?: 0
-        println(font_width)
-        // Calcualte the height adn width of the screen
+        //println(font_width)
+        // Calculate the height adn width of the screen
         width = font_width * columns
         height = font_height * rows
-        println("" + width + " " + height)
+        //println("" + width + " " + height)
         // Construct a JFrame
         frame = JFrame()
         frame.addKeyListener(object : KeyListener {
@@ -102,7 +88,7 @@ class Console {
                 if (e?.keyChar == null) return
                 val c = e.keyChar
                 if (font.canDisplay(c) || c == '\b') keyboard_buffer.add(c)
-                println(keyboard_buffer)
+                //System.out.println(keyboard_buffer)
             }
 
             override fun keyPressed(e: KeyEvent?) {}
@@ -149,6 +135,53 @@ class Console {
     enum class State(val string: String) {
         RUNNING("Running"),
         WAITING("Waiting for Input"),
-        FINISHED("Finished Excecution")
+        FINISHED("Finished Execution")
+    }
+
+    fun print(value: Any) {
+        print(value.toString())
+    }
+
+    fun println(value: Any) {
+        print(value)
+        print("\n")
+    }
+
+    fun setCursor(row: Int, column: Int) {
+        current_row = row
+        current_col = column
+        // set inside canvas
+    }
+
+    fun readString(): String {
+        val string = StringBuilder()
+        var ch: Char
+        // skip whitespace
+        do {
+            ch = readChar()
+        } while (ch in whitespace)
+        // read until whitespace and append to string
+        while (ch !in whitespace) {
+            string.append(ch)
+            ch = readChar()
+        }
+        return string.toString()
+    }
+
+    fun readChar(): Char {
+        val k = keyboard_buffer.take()
+        keyboard_buffer.poll()
+        return k
+    }
+
+    fun setBackgroundColor(color: Color) {
+        background_color = color
+    }
+
+    /**
+     * Sets the text color to [color]
+     */
+    fun setTextColor(color: Color) {
+        text_color = color
     }
 }
