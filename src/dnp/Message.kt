@@ -1,3 +1,5 @@
+package dnp
+
 import javax.swing.JComponent
 import javax.swing.JOptionPane
 

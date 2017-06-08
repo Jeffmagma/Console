@@ -1,22 +1,24 @@
+package dnp
+
 import java.awt.*
-import java.awt.datatransfer.DataFlavor
-import java.awt.event.ActionEvent
+import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
-import java.awt.event.KeyListener
 import java.awt.image.BufferedImage
+import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
-import javax.swing.*
+import javax.swing.JFrame
+import javax.swing.WindowConstants
 import kotlin.concurrent.timer
 
 class Console {
 
-    class Canvas : JPanel() {
-        val image = BufferedImage(69, 420, BufferedImage.TYPE_4BYTE_ABGR)
-        val graphics: Graphics2D = image.createGraphics()
+    inner class Canvas : javax.swing.JPanel() {
+        val image by lazy { BufferedImage(this@Console.width, this@Console.height, BufferedImage.TYPE_INT_ARGB) }
+        val graphics: Graphics2D by lazy { image.createGraphics() }
         var buffered = false
 
         init {
-            timer(period = 1) {
+            timer(period = 10) {
                 if (buffered) repaint()
             }
         }
@@ -24,6 +26,10 @@ class Console {
         fun drawString(s: String, x: Int, y: Int) {
             graphics.drawString(s, x, y)
             buffered = true
+        }
+
+        fun setColor(c: Color) {
+            graphics.color = c
         }
 
         override fun paintComponent(g: Graphics) {
@@ -37,6 +43,8 @@ class Console {
 
     // The keyboard buffer
     val keyboard_buffer = ArrayBlockingQueue<Char>(4096)
+    // The line buffer
+    val line_buffer = LinkedList<Char>()
     // The JFrame and its components
     val frame: JFrame
     // Font variables
@@ -57,7 +65,11 @@ class Console {
     var current_row = 0
 
     var text_color = Color.BLACK
+        @JvmName("setTextColor") set
+        @JvmName("setTextColor") get
     var background_color = Color.WHITE
+        @JvmName("setBackgroundColor") set
+        @JvmName("getBackgroundColor") get
 
     fun setState(state: State) {
         frame.title = window_title + " - " + state.string
@@ -65,7 +77,7 @@ class Console {
 
     // static variables basically
     companion object {
-        var consoles = 0
+        @JvmField var consoles = 0
         const val DEFAULT_ROWS = 25
         const val DEFAULT_COLS = 80
         const val DEFAULT_FONT_SIZE = 14
@@ -101,15 +113,12 @@ class Console {
         height = font_height * rows
         // Construct a JFrame
         frame = JFrame()
-        frame.addKeyListener(object : KeyListener {
+        frame.addKeyListener(object : KeyAdapter() {
             override fun keyTyped(e: KeyEvent?) {
                 if (e?.keyChar == null) return
                 val c = e.keyChar
                 if (font.canDisplay(c) || c == '\b') keyboard_buffer.add(c)
             }
-
-            override fun keyPressed(e: KeyEvent?) {}
-            override fun keyReleased(e: KeyEvent?) {}
         })
         frame.contentPane.preferredSize = Dimension(width, height)
         frame.add(graphics_canvas)
@@ -128,21 +137,21 @@ class Console {
 
     init {
         // Get the input map for key bindings
-        val input_map = graphics_canvas.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+        val input_map = graphics_canvas.getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW)
         // Set CTRL+Q to quit, and CTRL+V to paste
-        input_map.put(KeyStroke.getKeyStroke("control Q"), "quit")
-        input_map.put(KeyStroke.getKeyStroke("control V"), "paste")
-        input_map.put(KeyStroke.getKeyStroke("control P"), "print")
+        input_map.put(javax.swing.KeyStroke.getKeyStroke("control Q"), "quit")
+        input_map.put(javax.swing.KeyStroke.getKeyStroke("control V"), "paste")
+        input_map.put(javax.swing.KeyStroke.getKeyStroke("control P"), "print")
         // Quit is just System.exit(0) but since AbstractAction is abstract, you can't use a lambda
-        graphics_canvas.actionMap.put("quit", object : AbstractAction() {
-            override fun actionPerformed(e: ActionEvent?) {
+        graphics_canvas.actionMap.put("quit", object : javax.swing.AbstractAction() {
+            override fun actionPerformed(e: java.awt.event.ActionEvent?) {
                 System.exit(0)
             }
         })
         // Paste by getting the clipboard contents, then checking which ones you can print, and add them to the keyboard buffer
-        graphics_canvas.actionMap.put("paste", object : AbstractAction() {
-            override fun actionPerformed(e: ActionEvent?) {
-                val clipboard = Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor) as String
+        graphics_canvas.actionMap.put("paste", object : javax.swing.AbstractAction() {
+            override fun actionPerformed(e: java.awt.event.ActionEvent?) {
+                val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
                 println(clipboard)
                 for (ch: Char in clipboard) {
                     if (font.canDisplay(ch)) keyboard_buffer.add(ch)
@@ -180,7 +189,7 @@ class Console {
         // skip whitespace
         do {
             ch = readChar()
-        } while (ch in whitespace)
+        } while (ch in whitespace) // Character.isWhitespace(ch)
         // read until whitespace and append to string
         while (ch !in whitespace) {
             string.append(ch)
@@ -190,22 +199,36 @@ class Console {
     }
 
     // TODO make this read a char
-    fun readChar() = getChar()
+    fun readChar(): Char {
+        if (line_buffer.isNotEmpty()) {
+            return line_buffer.poll()
+        }
+        while (true) {
+            val ch = getChar()
+            if (ch == '\n') {
+                print("\n")
+                line_buffer.add('\n')
+                break
+            } else if (ch == '\b') {
+                // TODO erase previous char
+            } else {
+                print(ch)
+                line_buffer.add(ch)
+            }
+        }
+        return line_buffer.poll()
+    }
 
     fun getChar(): Char {
+        setState(State.WAITING)
         val k = keyboard_buffer.take()
         keyboard_buffer.poll()
+        setState(State.RUNNING)
         return k
     }
 
-    fun setBackgroundColor(color: Color) {
-        background_color = color
-    }
-
-    /**
-     * Sets the text color to [color]
-     */
-    fun setTextColor(color: Color) {
-        text_color = color
-    }
+    fun maxx() = width - 1
+    fun maxy() = height - 1
+    fun getMaxRows() = rows
+    fun maxrow() = rows
 }
