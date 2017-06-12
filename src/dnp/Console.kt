@@ -6,13 +6,14 @@ import java.awt.event.ActionEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
+import java.awt.print.Printable.PAGE_EXISTS
+import java.awt.print.PrinterJob
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import javax.swing.*
 import kotlin.concurrent.timer
 
 class Console {
-
     inner class Canvas : JPanel() {
         val image by lazy { BufferedImage(this@Console.width, this@Console.height, BufferedImage.TYPE_INT_ARGB) }
         val graphics: Graphics2D by lazy { image.createGraphics() }
@@ -24,10 +25,20 @@ class Console {
             }
         }
 
-        fun drawString(s: String, x: Int, y: Int) {
+        @Synchronized fun draw(f: () -> Unit) {
             graphics.color = graphics_color
-            graphics.drawString(s, x, y)
+            f()
             buffered = true
+        }
+
+        fun drawString(s: String, x: Int, y: Int) = draw { graphics.drawString(s, x, y) }
+        fun drawRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawRect(x, y, width, height) }
+        fun drawOval(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawOval(x, y, width, height) }
+        fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = draw { graphics.drawOval(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2) }
+        fun clearRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.clearRect(x, y, width, height) }
+        fun clearScreen(color: Color) = draw {
+            graphics.color = color
+            graphics.fillRect(0, 0, this@Console.width, this@Console.height)
         }
 
         override fun paintComponent(g: Graphics) {
@@ -37,14 +48,11 @@ class Console {
 
         fun drawText(row: Int = current_row, col: Int = current_col, text: String) {
             val pos = Point(col * font_width, row * font_height)
-            //graphics.color = background_color
-            graphics.color = Color.WHITE
+            graphics.color = background_color
             graphics.fillRect(pos.x, pos.y, text.length * font_width, font_height)
-            //graphics.color = text_color
-            graphics.color = Color.BLACK
-            graphics.font = font
-            graphics.drawString(text, pos.x, pos.y + font_height - font_base)
-            buffered = true
+            graphics.color = text_color
+            graphics.font = this@Console.font
+            drawString(text, pos.x, pos.y + font_height - font_base)
         }
     }
 
@@ -73,13 +81,13 @@ class Console {
     var current_col = 0
     var current_row = 0
 
-    var text_color = Color.BLACK
+    var text_color: Color = Color.BLACK
         @JvmName("setTextColor") set
         @JvmName("setTextColor") get
-    var background_color = Color.WHITE
+    var background_color: Color = Color.WHITE
         @JvmName("setTextBackgroundColor") set
         @JvmName("getTextBackgroundColor") get
-    var graphics_color = Color.BLACK
+    var graphics_color: Color = Color.BLACK
         @JvmName("setColor") set
         @JvmName("getColor") get
 
@@ -100,6 +108,11 @@ class Console {
     // TODO: this prints
     fun print(text: String?) {
         val text: String = text ?: "<null>"
+        if (text == "\n") {
+            current_col = 0
+            current_row++
+            return
+        }
         graphics_canvas.drawText(text = text)
         current_col += text.length
         System.out.println("printed: " + text)
@@ -120,7 +133,7 @@ class Console {
         val font_metrics = graphics_canvas.getFontMetrics(font)
         font_height = font_metrics.height + font_metrics.leading
         font_base = font_metrics.descent
-        val chars = 0..256
+        val chars = 32..127
         val char_widths = chars.map { font_metrics.charWidth(it) }
         font_width = char_widths.max() ?: 0
         // Calculate the height and width of the screen
@@ -146,9 +159,13 @@ class Console {
         frame.requestFocus()
     }
 
-    fun drawString(s: String, x: Int, y: Int) {
-        graphics_canvas.drawString(s, x, y)
+    fun clear() {
+        graphics_canvas.clearScreen(background_color)
+        setCursor(0, 0)
     }
+
+    fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
+    fun drawRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawRect(x, y, width, height)
 
     init {
         // Get the input map for key bindings
@@ -167,13 +184,25 @@ class Console {
         graphics_canvas.actionMap.put("paste", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent?) {
                 val clipboard = Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor) as String
-                println(clipboard)
                 for (ch: Char in clipboard) {
                     if (font.canDisplay(ch)) keyboard_buffer.add(ch)
                 }
             }
         })
-        // TODO Implement printing
+        // Prints a screenshot of the program
+        graphics_canvas.actionMap.put("print", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent?) {
+                val job = PrinterJob.getPrinterJob()
+                job.setPrintable { graphics, pageFormat, pageIndex ->
+                    (graphics as Graphics2D).translate(pageFormat?.imageableX ?: .0, pageFormat?.imageableY ?: .0)
+                    graphics.drawImage(graphics_canvas.image, 0, 0, null)
+                    PAGE_EXISTS
+                }
+                if (job.printDialog()) {
+                    job.print()
+                }
+            }
+        })
     }
 
     // The extension at the top beside the console name
@@ -195,7 +224,7 @@ class Console {
     fun setCursor(row: Int, column: Int) {
         current_row = row
         current_col = column
-        // set inside canvas
+        // TODO: set inside canvas
     }
 
     fun readString(): String {
@@ -231,7 +260,6 @@ class Console {
         return string.toString()
     }
 
-    // TODO make this read a char
     fun readChar(): Char {
         if (line_buffer.isNotEmpty()) {
             return line_buffer.poll()
@@ -243,7 +271,7 @@ class Console {
                 line_buffer.add('\n')
                 break
             } else if (ch == '\b') {
-                // TODO erase previous char
+                System.out.println("backspace")
             } else {
                 print(ch)
                 line_buffer.add(ch)
@@ -255,7 +283,6 @@ class Console {
     fun getChar(): Char {
         setState(State.WAITING)
         val k = keyboard_buffer.take()
-        keyboard_buffer.poll()
         setState(State.RUNNING)
         return k
     }
