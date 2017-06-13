@@ -23,6 +23,10 @@ class Console {
             timer(period = 1) {
                 if (buffered) repaint()
             }
+            timer(period = 100) {
+                val threads = Thread.getAllStackTraces().keys
+                if (threads.filter { it.name.toLowerCase() == "main" }.isEmpty()) setState(State.FINISHED)
+            }
         }
 
         @Synchronized fun draw(f: () -> Unit) {
@@ -33,6 +37,7 @@ class Console {
 
         fun drawString(s: String, x: Int, y: Int) = draw { graphics.drawString(s, x, y) }
         fun drawRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawRect(x, y, width, height) }
+        fun fillRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.fillRect(x, y, width, height) }
         fun drawOval(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawOval(x, y, width, height) }
         fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = draw { graphics.drawOval(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2) }
         fun clearRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.clearRect(x, y, width, height) }
@@ -50,9 +55,15 @@ class Console {
             val pos = Point(col * font_width, row * font_height)
             graphics.color = background_color
             graphics.fillRect(pos.x, pos.y, text.length * font_width, font_height)
-            graphics.color = text_color
+            graphics_color = text_color
             graphics.font = this@Console.font
             drawString(text, pos.x, pos.y + font_height - font_base)
+        }
+
+        fun eraseChar(row: Int = current_row, col: Int = current_col) {
+            val pos = Point(col * font_width, row * font_height)
+            graphics_color = background_color
+            fillRect(pos.x, pos.y, font_width, font_height)
         }
     }
 
@@ -154,6 +165,7 @@ class Console {
         frame.pack()
         setState(State.RUNNING)
         frame.setLocationRelativeTo(null)
+        frame.background = Color.WHITE
         frame.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
         frame.isVisible = true
         frame.requestFocus()
@@ -193,7 +205,7 @@ class Console {
         graphics_canvas.actionMap.put("print", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent?) {
                 val job = PrinterJob.getPrinterJob()
-                job.setPrintable { graphics, pageFormat, pageIndex ->
+                job.setPrintable { graphics, pageFormat, _ ->
                     (graphics as Graphics2D).translate(pageFormat?.imageableX ?: .0, pageFormat?.imageableY ?: .0)
                     graphics.drawImage(graphics_canvas.image, 0, 0, null)
                     PAGE_EXISTS
@@ -271,7 +283,8 @@ class Console {
                 line_buffer.add('\n')
                 break
             } else if (ch == '\b') {
-                System.out.println("backspace")
+                current_col--
+                graphics_canvas.eraseChar()
             } else {
                 print(ch)
                 line_buffer.add(ch)
