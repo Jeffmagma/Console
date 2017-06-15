@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.image.BufferedImage
+import java.awt.image.ImageObserver
 import java.awt.print.Printable.PAGE_EXISTS
 import java.awt.print.PrinterJob
 import java.util.*
@@ -18,15 +19,45 @@ class Console {
         val image by lazy { BufferedImage(this@Console.width, this@Console.height, BufferedImage.TYPE_INT_ARGB) }
         val graphics: Graphics2D by lazy { image.createGraphics() }
         var buffered = false
+        lateinit var main: Thread
+        var show_cursor = false
+        var cursor_visible = true
+        var finished = false
 
         init {
+            val threads = Thread.getAllStackTraces().keys
+            for (thread: Thread in threads) {
+                if (thread.name.toLowerCase() == "main") {
+                    main = thread
+                    break
+                }
+            }
+            // main = threads.filter { it.name.toLowerCase() == "main" }[0] // better for program, one line/easier, less correct
+            // [0] can be replaced with .forEach { main = it }
             timer(period = 1) {
                 if (buffered) repaint()
             }
             timer(period = 100) {
-                val threads = Thread.getAllStackTraces().keys
-                if (threads.filter { it.name.toLowerCase() == "main" }.isEmpty()) setState(State.FINISHED)
+                if (!main.isAlive) {
+                    setState(State.FINISHED)
+                    this.cancel()
+                }
             }
+            timer(period = 300) {
+                cursor_visible = !cursor_visible
+                if (show_cursor && cursor_visible) {
+                    val pos = Point(current_col * font_width, current_row * font_height)
+                    graphics_color = Color.BLACK
+                    // graphics_color = if (cursor_visible) Color.BLACK else Color.WHITE
+                    fillRect(pos.x, pos.y, font_width, font_height)
+                }
+            }
+        }
+
+        @Synchronized fun setCursorPos(row: Int, col: Int) {
+            if (cursor_visible) eraseChar()
+            current_row = row
+            current_col = col
         }
 
         @Synchronized fun draw(f: () -> Unit) {
@@ -41,9 +72,30 @@ class Console {
         fun drawOval(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawOval(x, y, width, height) }
         fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = draw { graphics.drawOval(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2) }
         fun clearRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.clearRect(x, y, width, height) }
-        fun clearScreen(color: Color) = draw {
+        fun copyArea(x: Int, y: Int, width: Int, height: Int, delta_x: Int, delta_y: Int) = draw { graphics.copyArea(x, y, width, height, delta_x, delta_y) }
+        fun draw3DRect(x: Int, y: Int, width: Int, height: Int, raised: Boolean) = draw { graphics.draw3DRect(x, y, width, height, raised) }
+        fun drawArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = draw { graphics.drawArc(x, y, width, height, start_angle, arc_angle) }
+        fun drawArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = draw { graphics.drawArc(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2, start_angle, arc_angle) }
+        fun drawImage(image: Image, x: Int, y: Int, observer: ImageObserver?) = draw { graphics.drawImage(image, x, y, observer) }
+        fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) = draw { graphics.drawLine(x1, y1, x2, y2) }
+        fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = draw { graphics.drawRoundRect(x, y, width, height, arc_width, arc_height) }
+
+        fun drawMapleLeaf(x: Int, y: Int, width: Int, height: Int) = draw {
+            TODO("Draw maple leaf")
+        }
+
+        fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw { TODO("Draw Star") }
+
+        fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.drawPolygon(x_points, y_points, points) }
+        fun clearScreen(color: Color = background_color) = draw {
             graphics.color = color
             graphics.fillRect(0, 0, this@Console.width, this@Console.height)
+        }
+
+        fun eraseLine(line: Int = current_row) {
+            val y = line * font_height
+            graphics_color = background_color
+            fillRect(0, y, this@Console.width, font_height)
         }
 
         override fun paintComponent(g: Graphics) {
@@ -120,13 +172,22 @@ class Console {
     fun print(text: String?) {
         val text: String = text ?: "<null>"
         if (text == "\n") {
-            current_col = 0
-            current_row++
+            setCursor(current_row + 1, 0)
             return
+        }
+        if (text == "\t") {
+            while (++current_col % 4 != 0)
         }
         graphics_canvas.drawText(text = text)
         current_col += text.length
         System.out.println("printed: " + text)
+    }
+
+    fun print(number: Number, padding: Int) {
+        val padded = StringBuilder()
+        padded.append(number)
+        // TODO: add spaces
+        print(padded.toString())
     }
 
     @JvmOverloads constructor(font_size: Int = DEFAULT_FONT_SIZE) : this(DEFAULT_ROWS, DEFAULT_COLS, font_size)
@@ -172,12 +233,15 @@ class Console {
     }
 
     fun clear() {
-        graphics_canvas.clearScreen(background_color)
+        graphics_canvas.clearScreen()
         setCursor(0, 0)
     }
 
     fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
+    fun fillRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.fillRect(x, y, width, height)
     fun drawRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawRect(x, y, width, height)
+    fun clearRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.clearRect(x, y, width, height)
+    fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = graphics_canvas.drawPolygon(x_points, y_points, points)
 
     init {
         // Get the input map for key bindings
@@ -234,9 +298,7 @@ class Console {
     }
 
     fun setCursor(row: Int, column: Int) {
-        current_row = row
-        current_col = column
-        // TODO: set inside canvas
+        graphics_canvas.setCursorPos(row, column)
     }
 
     fun readString(): String {
@@ -272,7 +334,20 @@ class Console {
         return string.toString()
     }
 
+    fun erasePreviousChar() {
+        var col = current_col
+        var row = current_row
+        if (col > 0) col--
+        else if (row > 0) {
+            row--
+            col = 0
+        }
+        setCursor(row, col)
+        graphics_canvas.eraseChar()
+    }
+
     fun readChar(): Char {
+        graphics_canvas.show_cursor = true
         if (line_buffer.isNotEmpty()) {
             return line_buffer.poll()
         }
@@ -283,13 +358,18 @@ class Console {
                 line_buffer.add('\n')
                 break
             } else if (ch == '\b') {
-                current_col--
-                graphics_canvas.eraseChar()
+                if (ch != '\t') {
+                    erasePreviousChar()
+                    line_buffer.removeLast()
+                } else {
+                    while (--current_col % 4 != 0) erasePreviousChar()
+                }
             } else {
                 print(ch)
                 line_buffer.add(ch)
             }
         }
+        graphics_canvas.show_cursor = false
         return line_buffer.poll()
     }
 
