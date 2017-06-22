@@ -176,7 +176,7 @@ class Console {
             return
         }
         if (text == "\t") {
-            while (++current_col % 4 != 0)
+            while (++current_col % 4 != 0);
         }
         graphics_canvas.drawText(text = text)
         current_col += text.length
@@ -383,6 +383,10 @@ class Console {
     fun maxx() = width - 1
     fun maxy() = height - 1
     fun getMaxRows() = rows
+    fun getMaxCols() = cols
+    fun getRow() = current_row
+    fun getCol() = current_col
     fun maxrow() = rows
+    fun maxcol() = cols
     fun setColor(c: Color) = { graphics_color = c }
 }
