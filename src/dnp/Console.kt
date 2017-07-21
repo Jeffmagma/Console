@@ -66,13 +66,14 @@ class Console {
             buffered = true
         }
 
+        fun clearRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.clearRect(x, y, width, height) }
+        fun copyArea(x: Int, y: Int, width: Int, height: Int, delta_x: Int, delta_y: Int) = draw { graphics.copyArea(x, y, width, height, delta_x, delta_y) }
+
         fun drawString(s: String, x: Int, y: Int) = draw { graphics.drawString(s, x, y) }
         fun drawRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawRect(x, y, width, height) }
         fun fillRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.fillRect(x, y, width, height) }
         fun drawOval(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawOval(x, y, width, height) }
         fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = draw { graphics.drawOval(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2) }
-        fun clearRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.clearRect(x, y, width, height) }
-        fun copyArea(x: Int, y: Int, width: Int, height: Int, delta_x: Int, delta_y: Int) = draw { graphics.copyArea(x, y, width, height, delta_x, delta_y) }
         fun draw3DRect(x: Int, y: Int, width: Int, height: Int, raised: Boolean) = draw { graphics.draw3DRect(x, y, width, height, raised) }
         fun drawArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = draw { graphics.drawArc(x, y, width, height, start_angle, arc_angle) }
         fun drawArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = draw { graphics.drawArc(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2, start_angle, arc_angle) }
@@ -81,7 +82,9 @@ class Console {
         fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = draw { graphics.drawRoundRect(x, y, width, height, arc_width, arc_height) }
 
         fun drawMapleLeaf(x: Int, y: Int, width: Int, height: Int) = draw {
-            TODO("Draw maple leaf")
+            val points: Array<Point>
+            val middle = x + width / 2
+            val bottom = y + height
         }
 
         fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw { TODO("Draw Star") }
@@ -237,11 +240,24 @@ class Console {
         setCursor(0, 0)
     }
 
-    fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
-    fun fillRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.fillRect(x, y, width, height)
-    fun drawRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawRect(x, y, width, height)
     fun clearRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.clearRect(x, y, width, height)
+    fun copyArea(x: Int, y: Int, width: Int, height: Int, delta_x: Int, delta_y: Int) = graphics_canvas.copyArea(x, y, width, height, delta_x, delta_y)
+    fun draw3DRect(x: Int, y: Int, width: Int, height: Int, raised: Boolean) = graphics_canvas.draw3DRect(x, y, width, height, raised)
+    fun drawArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = graphics_canvas.drawArc(x, y, width, height, start_angle, arc_angle)
+    fun drawArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = graphics_canvas.drawArc(pos, v_radius, h_radius, start_angle, arc_angle)
+    @JvmOverloads fun drawImage(image: Image, x: Int, y: Int, observer: ImageObserver? = null) = graphics_canvas.drawImage(image, x, y, observer)
+    fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) = graphics_canvas.drawLine(x1, y1, x2, y2)
+    fun drawMapleLeaf(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawMapleLeaf(x, y, width, height)
+    fun drawOval(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawOval(x, y, width, height)
+    fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = graphics_canvas.drawOval(pos, v_radius, h_radius)
     fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = graphics_canvas.drawPolygon(x_points, y_points, points)
+    fun drawRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawRect(x, y, width, height)
+    fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.drawRoundRect(x, y, width, height, arc_width, arc_height)
+    fun drawStar(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawStar(x, y, width, height)
+    fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
+
+    fun fillRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.fillRect(x, y, width, height)
+
 
     init {
         // Get the input map for key bindings
@@ -389,4 +405,7 @@ class Console {
     fun maxrow() = rows
     fun maxcol() = cols
     fun setColor(c: Color) = { graphics_color = c }
+
+    fun setXORMode(c: Color) = graphics_canvas.graphics.setXORMode(c)
+    fun setPaintMode() = graphics_canvas.graphics.setPaintMode()
 }
