@@ -60,7 +60,7 @@ class Console {
             current_col = col
         }
 
-        @Synchronized fun draw(f: () -> Unit) {
+        @Synchronized private fun draw(f: () -> Unit) {
             graphics.color = graphics_color
             f()
             buffered = true
@@ -173,7 +173,7 @@ class Console {
 
     // TODO: this prints
     fun print(text: String?) {
-        val text: String = text ?: "<null>"
+        val text = text ?: "<null>"
         if (text == "\n") {
             setCursor(current_row + 1, 0)
             return
@@ -181,8 +181,16 @@ class Console {
         if (text == "\t") {
             while (++current_col % 4 != 0);
         }
-        graphics_canvas.drawText(text = text)
-        current_col += text.length
+        for (c in text) {
+            if (c != '\n' && c != '\t') {
+                if (current_col == cols) {
+                    setCursor(current_row + 1, 0)
+                    current_col = 0
+                }
+                graphics_canvas.drawText(text = c.toString())
+                current_col++
+            } else print(c)
+        }
         System.out.println("printed: " + text)
     }
 
@@ -197,9 +205,9 @@ class Console {
 
     @JvmOverloads constructor(rows: Int, columns: Int, font_size: Int = DEFAULT_FONT_SIZE, title: String = DEFAULT_TITLE) {
         consoles++
-        if (title == DEFAULT_TITLE && consoles > 1) {
-            window_title = title + " " + consoles
-        } else window_title = title
+        window_title = if (title == DEFAULT_TITLE && consoles > 1) {
+            title + " " + consoles
+        } else title
 
         this.cols = columns
         this.rows = rows
@@ -343,10 +351,11 @@ class Console {
     fun readLine(): String {
         val string = StringBuilder()
         var ch: Char
-        do {
+        while (true) {
             ch = readChar()
+            if (ch == '\n') break
             string.append(ch)
-        } while (ch != '\n')
+        }
         return string.toString()
     }
 
