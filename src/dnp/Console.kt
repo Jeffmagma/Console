@@ -22,11 +22,10 @@ class Console {
         lateinit var main: Thread
         var show_cursor = false
         var cursor_visible = true
-        var finished = false
 
         init {
             val threads = Thread.getAllStackTraces().keys
-            for (thread: Thread in threads) {
+            for (thread in threads) {
                 if (thread.name.toLowerCase() == "main") {
                     main = thread
                     break
@@ -54,7 +53,8 @@ class Console {
             }
         }
 
-        @Synchronized fun setCursorPos(row: Int, col: Int) {
+        @Synchronized
+        fun setCursorPos(row: Int, col: Int) {
             if (cursor_visible) eraseChar()
             current_row = row
             current_col = col
@@ -74,12 +74,17 @@ class Console {
         fun fillRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.fillRect(x, y, width, height) }
         fun drawOval(x: Int, y: Int, width: Int, height: Int) = draw { graphics.drawOval(x, y, width, height) }
         fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = draw { graphics.drawOval(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2) }
+        fun fillOval(x: Int, y: Int, width: Int, height: Int) = draw { graphics.fillOval(x, y, width, height) }
+        fun fillOval(pos: Point, v_radius: Int, h_radius: Int) = draw { graphics.fillOval(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2) }
         fun draw3DRect(x: Int, y: Int, width: Int, height: Int, raised: Boolean) = draw { graphics.draw3DRect(x, y, width, height, raised) }
         fun drawArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = draw { graphics.drawArc(x, y, width, height, start_angle, arc_angle) }
         fun drawArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = draw { graphics.drawArc(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2, start_angle, arc_angle) }
+        fun fillArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = draw { graphics.fillArc(x, y, width, height, start_angle, arc_angle) }
+        fun fillArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = draw { graphics.fillArc(pos.x - h_radius, pos.y - v_radius, h_radius * 2, v_radius * 2, start_angle, arc_angle) }
         fun drawImage(image: Image, x: Int, y: Int, observer: ImageObserver?) = draw { graphics.drawImage(image, x, y, observer) }
         fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) = draw { graphics.drawLine(x1, y1, x2, y2) }
         fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = draw { graphics.drawRoundRect(x, y, width, height, arc_width, arc_height) }
+        fun fillRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = draw { graphics.fillRoundRect(x, y, width, height, arc_width, arc_height) }
 
         fun drawMapleLeaf(x: Int, y: Int, width: Int, height: Int) = draw {
             val points: Array<Point>
@@ -90,6 +95,7 @@ class Console {
         fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw { TODO("Draw Star") }
 
         fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.drawPolygon(x_points, y_points, points) }
+        fun fillPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.fillPolygon(x_points, y_points, points) }
         fun clearScreen(color: Color = background_color) = draw {
             graphics.color = color
             graphics.fillRect(0, 0, this@Console.width, this@Console.height)
@@ -136,7 +142,7 @@ class Console {
     val font_width: Int
     val font_base: Int
     // The base window title
-    val window_title: String
+    private val window_title: String
     // The height and width of the JFrame
     val height: Int
     val width: Int
@@ -163,12 +169,14 @@ class Console {
 
     // static variables basically
     companion object {
-        @JvmField var consoles = 0
+        @JvmField
+        var consoles = 0
         const val DEFAULT_ROWS = 25
         const val DEFAULT_COLS = 80
         const val DEFAULT_FONT_SIZE = 14
         const val DEFAULT_TITLE = "Console"
-        @JvmStatic val whitespace = arrayOf('\n', '\t', ' ')
+        @JvmStatic
+        val whitespace = arrayOf('\n', '\t', ' ')
     }
 
     // TODO: this prints
@@ -195,13 +203,12 @@ class Console {
     }
 
     fun print(number: Number, padding: Int) {
-        val padded = StringBuilder()
-        padded.append(number)
-        // TODO: add spaces
-        print(padded.toString())
+        print(String.format("%" + padding + "d", number))
     }
 
     @JvmOverloads constructor(font_size: Int = DEFAULT_FONT_SIZE) : this(DEFAULT_ROWS, DEFAULT_COLS, font_size)
+
+    constructor(title: String) : this(DEFAULT_ROWS, DEFAULT_COLS, title = title)
 
     @JvmOverloads constructor(rows: Int, columns: Int, font_size: Int = DEFAULT_FONT_SIZE, title: String = DEFAULT_TITLE) {
         consoles++
@@ -253,14 +260,23 @@ class Console {
     fun draw3DRect(x: Int, y: Int, width: Int, height: Int, raised: Boolean) = graphics_canvas.draw3DRect(x, y, width, height, raised)
     fun drawArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = graphics_canvas.drawArc(x, y, width, height, start_angle, arc_angle)
     fun drawArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = graphics_canvas.drawArc(pos, v_radius, h_radius, start_angle, arc_angle)
-    @JvmOverloads fun drawImage(image: Image, x: Int, y: Int, observer: ImageObserver? = null) = graphics_canvas.drawImage(image, x, y, observer)
+    fun fillArc(x: Int, y: Int, width: Int, height: Int, start_angle: Int, arc_angle: Int) = graphics_canvas.fillArc(x, y, width, height, start_angle, arc_angle)
+    fun fillArc(pos: Point, v_radius: Int, h_radius: Int, start_angle: Int, arc_angle: Int) = graphics_canvas.fillArc(pos, v_radius, h_radius, start_angle, arc_angle)
+    @JvmOverloads
+    fun drawImage(image: Image, x: Int, y: Int, observer: ImageObserver? = null) = graphics_canvas.drawImage(image, x, y, observer)
+
     fun drawLine(x1: Int, y1: Int, x2: Int, y2: Int) = graphics_canvas.drawLine(x1, y1, x2, y2)
     fun drawMapleLeaf(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawMapleLeaf(x, y, width, height)
     fun drawOval(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawOval(x, y, width, height)
     fun drawOval(pos: Point, v_radius: Int, h_radius: Int) = graphics_canvas.drawOval(pos, v_radius, h_radius)
+    fun fillOval(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.fillOval(x, y, width, height)
+    fun fillOval(pos: Point, v_radius: Int, h_radius: Int) = graphics_canvas.fillOval(pos, v_radius, h_radius)
+
     fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = graphics_canvas.drawPolygon(x_points, y_points, points)
+    fun fillPolygon(x_points: IntArray, y_points: IntArray, points: Int) = graphics_canvas.fillPolygon(x_points, y_points, points)
     fun drawRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawRect(x, y, width, height)
     fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.drawRoundRect(x, y, width, height, arc_width, arc_height)
+    fun fillRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.fillRoundRect(x, y, width, height, arc_width, arc_height)
     fun drawStar(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawStar(x, y, width, height)
     fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
 
