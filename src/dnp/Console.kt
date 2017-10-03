@@ -138,6 +138,7 @@ class Console {
     val frame: JFrame
     // Font variables
     var font = Font("monospaced", Font.PLAIN, DEFAULT_FONT_SIZE)
+        @JvmName("SADFASDFSA") private set
     val font_height: Int
     val font_width: Int
     val font_base: Int
@@ -204,6 +205,14 @@ class Console {
 
     fun print(number: Number, padding: Int) {
         print(String.format("%" + padding + "d", number))
+    }
+
+    fun print(text: String, padding: Int) {
+        print(String.format("%-" + padding + "s", text))
+    }
+
+    fun close() {
+        frame.dispose()
     }
 
     @JvmOverloads constructor(font_size: Int = DEFAULT_FONT_SIZE) : this(DEFAULT_ROWS, DEFAULT_COLS, font_size)
@@ -332,7 +341,7 @@ class Console {
         print(value?.toString())
     }
 
-    fun println(value: Any?) {
+    fun println(value: Any? = "") {
         print(value)
         print("\n")
     }
@@ -430,6 +439,9 @@ class Console {
     fun maxrow() = rows
     fun maxcol() = cols
     fun setColor(c: Color) = { graphics_color = c }
+    fun setFont(f: Font) {
+        graphics_canvas.graphics.font = f
+    }
 
     fun setXORMode(c: Color) = graphics_canvas.graphics.setXORMode(c)
     fun setPaintMode() = graphics_canvas.graphics.setPaintMode()
