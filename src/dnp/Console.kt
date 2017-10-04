@@ -209,7 +209,7 @@ class Console {
             is Float, Double -> print(String.format("%-${padding}f", text))
             is String -> print(String.format("%-${padding}s", text))
             is Char -> print(String.format("%-${padding}c", text))
-            else -> print(String.format("%-${padding}c", text.toString()))
+            else -> print(String.format("%-${padding}s", text.toString()))
         }
     }
 
