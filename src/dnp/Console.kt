@@ -200,15 +200,25 @@ class Console {
                 current_col++
             } else print(c)
         }
-        System.out.println("printed: " + text)
+        //System.out.println("printed: " + text)
     }
 
-    fun print(number: Number, padding: Int) {
-        print(String.format("%" + padding + "d", number))
+    fun print(text: Any, padding: Int) {
+        when (text) {
+            is Byte, Short, Int, Long -> print(String.format("%${padding}d", text))
+            is Float, Double -> print(String.format("%-${padding}f", text))
+            is String -> print(String.format("%-${padding}s", text))
+            is Char -> print(String.format("%-${padding}c", text))
+            else -> print(String.format("%-${padding}c", text.toString()))
+        }
     }
 
-    fun print(text: String, padding: Int) {
-        print(String.format("%-" + padding + "s", text))
+    fun print(f: Float, padding: Int, places: Int) {
+        print(String.format("%$padding.${places}f", f))
+    }
+
+    fun print(d: Double, padding: Int, places: Int) {
+        print(String.format("%$padding.${places}f", d))
     }
 
     fun close() {
@@ -217,9 +227,9 @@ class Console {
 
     @JvmOverloads constructor(font_size: Int = DEFAULT_FONT_SIZE) : this(DEFAULT_ROWS, DEFAULT_COLS, font_size)
 
-    constructor(title: String) : this(DEFAULT_ROWS, DEFAULT_COLS, title = title)
+    @JvmOverloads constructor(rows: Int = DEFAULT_ROWS, columns: Int = DEFAULT_COLS, title: String) : this(rows, columns, DEFAULT_FONT_SIZE, title = title)
 
-    @JvmOverloads constructor(rows: Int, columns: Int, font_size: Int = DEFAULT_FONT_SIZE, title: String = DEFAULT_TITLE) {
+    @JvmOverloads constructor(rows: Int, columns: Int, font_size: Int, title: String = DEFAULT_TITLE) {
         consoles++
         window_title = if (title == DEFAULT_TITLE && consoles > 1) {
             title + " " + consoles
@@ -341,6 +351,7 @@ class Console {
         print(value?.toString())
     }
 
+    @JvmOverloads
     fun println(value: Any? = "") {
         print(value)
         print("\n")
