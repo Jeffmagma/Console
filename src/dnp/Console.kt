@@ -10,6 +10,7 @@ import java.awt.image.ImageObserver
 import java.awt.print.Printable.PAGE_EXISTS
 import java.awt.print.PrinterJob
 import java.util.*
+import java.util.Timer
 import java.util.concurrent.ArrayBlockingQueue
 import javax.swing.*
 import kotlin.concurrent.timer
@@ -33,21 +34,20 @@ class Console {
             }
             // main = threads.filter { it.name.toLowerCase() == "main" }[0] // better for program, one line/easier, less correct
             // [0] can be replaced with .forEach { main = it }
-            timer(period = 1) {
+            drawing_thread = timer(period = 1) {
                 if (buffered) repaint()
             }
-            timer(period = 100) {
+            main_check_thread = timer(period = 100) {
                 if (!main.isAlive) {
                     setState(State.FINISHED)
                     this.cancel()
                 }
             }
-            timer(period = 300) {
+            cursor_thread = timer(period = 300) {
                 cursor_visible = !cursor_visible
-                if (show_cursor && cursor_visible) {
+                if (show_cursor) {
                     val pos = Point(current_col * font_width, current_row * font_height)
-                    graphics_color = Color.BLACK
-                    // graphics_color = if (cursor_visible) Color.BLACK else Color.WHITE
+                    graphics_color = if (cursor_visible) Color.BLACK else Color.WHITE
                     fillRect(pos.x, pos.y, font_width, font_height)
                 }
             }
@@ -127,6 +127,10 @@ class Console {
             fillRect(pos.x, pos.y, font_width, font_height)
         }
     }
+
+    lateinit var cursor_thread: Timer
+    lateinit var drawing_thread: Timer
+    lateinit var main_check_thread: Timer
 
     val graphics_canvas = Canvas()
 
@@ -213,6 +217,21 @@ class Console {
         }
     }
 
+    fun println(text: Any, padding: Int) {
+        print(text, padding)
+        println()
+    }
+
+    fun println(f: Float, padding: Int, places: Int) {
+        print(f, padding, places)
+        println()
+    }
+
+    fun println(d: Double, padding: Int, places: Int) {
+        print(d, padding, places)
+        println()
+    }
+
     fun print(f: Float, padding: Int, places: Int) {
         print(String.format("%$padding.${places}f", f))
     }
@@ -222,6 +241,9 @@ class Console {
     }
 
     fun close() {
+        cursor_thread.cancel()
+        drawing_thread.cancel()
+        main_check_thread.cancel()
         frame.dispose()
     }
 
