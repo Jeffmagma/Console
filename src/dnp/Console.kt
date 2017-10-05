@@ -101,13 +101,15 @@ class Console {
 
         fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw {
             val points = arrayOfNulls<Point>(10)
-            val width_ratio_1 = width / (2 * ratio + 1)
-            val width_ratio_golden: Int = (width_ratio_1 * ratio) as Int
-            val height_ratio_1 = height / (ratio + 1)
-            val height_ratio_golden: Int = (height_ratio_1 * ratio) as Int
+            val width_ratio_1_d = width / (2 * ratio + 1)
+            val width_ratio_golden = (width_ratio_1_d * ratio).toInt()
+            val height_ratio_1_d = height / (ratio + 1)
+            val height_ratio_golden = (height_ratio_1_d * ratio).toInt()
+            val width_ratio_1 = width_ratio_1_d.toInt()
+            val height_ratio_1 = height_ratio_1_d.toInt()
             points[0] = Point(x + width / 2, y)
-            points[1] = Point(x + width_ratio_golden, y + height_ratio_1 as Int)
-            points[2] = Point(x, y + height_ratio_1 as Int)
+            points[1] = Point(x + width_ratio_golden, y + height_ratio_1)
+            points[2] = Point(x, y + height_ratio_1)
             points[3] = Point()
             points[4] = Point(x + width_ratio_golden, y + height)
 
