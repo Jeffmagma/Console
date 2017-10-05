@@ -89,12 +89,29 @@ class Console {
         fun fillRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = draw { graphics.fillRoundRect(x, y, width, height, arc_width, arc_height) }
 
         fun drawMapleLeaf(x: Int, y: Int, width: Int, height: Int) = draw {
-            val points: Array<Point>
+            val xscale = width / 152
+            val yscale = height / 140
             val middle = x + width / 2
-            val bottom = y + height
+            val points = arrayOfNulls<Point>(26)
+            points[0] = Point(middle - xscale * 5, y + height)
+            points[1] = Point()
         }
 
-        fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw { TODO("Draw Star") }
+        val ratio = (1 + Math.sqrt(5.0)) / 2
+
+        fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw {
+            val points = arrayOfNulls<Point>(10)
+            val width_ratio_1 = width / (2 * ratio + 1)
+            val width_ratio_golden: Int = (width_ratio_1 * ratio) as Int
+            val height_ratio_1 = height / (ratio + 1)
+            val height_ratio_golden: Int = (height_ratio_1 * ratio) as Int
+            points[0] = Point(x + width / 2, y)
+            points[1] = Point(x + width_ratio_golden, y + height_ratio_1 as Int)
+            points[2] = Point(x, y + height_ratio_1 as Int)
+            points[3] = Point()
+            points[4] = Point(x + width_ratio_golden, y + height)
+
+        }
 
         fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.drawPolygon(x_points, y_points, points) }
         fun fillPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.fillPolygon(x_points, y_points, points) }
