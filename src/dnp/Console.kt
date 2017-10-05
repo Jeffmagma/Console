@@ -471,7 +471,6 @@ class Console {
     fun getCol() = current_col
     fun maxrow() = rows
     fun maxcol() = cols
-    fun setColor(c: Color) = { graphics_color = c }
     fun setFont(f: Font) {
         graphics_canvas.graphics.font = f
     }
