@@ -40,6 +40,8 @@ class Console {
             main_check_thread = timer(period = 100) {
                 if (!main.isAlive) {
                     setState(State.FINISHED)
+                    drawing_thread.cancel()
+                    cursor_thread.cancel()
                     this.cancel()
                 }
             }
