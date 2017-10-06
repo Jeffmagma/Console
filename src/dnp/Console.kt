@@ -57,15 +57,19 @@ class Console {
 
         @Synchronized
         fun setCursorPos(row: Int, col: Int) {
-            if (cursor_visible) eraseChar()
-            current_row = row
-            current_col = col
+            synchronized(this) {
+                if (cursor_visible) eraseChar()
+                current_row = row
+                current_col = col
+            }
         }
 
         @Synchronized private fun draw(f: () -> Unit) {
-            graphics.color = graphics_color
-            f()
-            buffered = true
+            synchronized(this) {
+                graphics.color = graphics_color
+                f()
+                buffered = true
+            }
         }
 
         fun clearRect(x: Int, y: Int, width: Int, height: Int) = draw { graphics.clearRect(x, y, width, height) }
@@ -102,23 +106,20 @@ class Console {
         fun drawStar(x: Int, y: Int, width: Int, height: Int, fill: Boolean = false) = draw {
             val points = Array(10) { Point() }
             val width_ratio_1_d = width / (2 * ratio + 1)
-            val width_ratio_golden = (width_ratio_1_d * ratio).toInt()
+            val width_ratio_golden = (width_ratio_1_d * ratio)/*.toInt()*/
             val height_ratio_1_d = height / (ratio + 1)
             val height_ratio_golden = (height_ratio_1_d * ratio).toInt()
             val width_ratio_1 = width_ratio_1_d.toInt()
             val height_ratio_1 = height_ratio_1_d.toInt()
             points[0] = Point(x + width / 2, y)
-            points[1] = Point(x + width_ratio_golden, y + height_ratio_1)
+            points[1] = Point(x + width_ratio_golden.toInt(), y + height_ratio_1)
             points[2] = Point(x, y + height_ratio_1)
-            points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4.0 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1)).toInt()) / (2 * width_ratio_golden))
-            points[4] = Point(x + width_ratio_golden / 2, y + height)
-            points[5] = Point(x + width / 2 - (Math.sqrt((width * width + height * height).toDouble())).toInt(), y + height)
+            points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden.toInt()), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1)).toInt()) / (2 * width_ratio_golden.toInt()))
+            points[4] = Point(x + width_ratio_golden.toInt() / 2, y + height)
+            points[5] = Point(x + width / 2, y + height - (width_ratio_golden / 2 * Math.tan(Math.toRadians(36.0))).toInt())
             for (i in 6..9) {
                 points[i].y = points[10 - i].y
                 points[i].x = x + width - (points[10 - i].x - x)
-            }
-            for (i in 0..9) {
-                drawString(i.toString(), points[i].x, points[i].y)
             }
             if (fill) fillPolygon(points)
             else drawPolygon(points)
@@ -364,7 +365,9 @@ class Console {
     fun fillOval(pos: Point, v_radius: Int, h_radius: Int) = graphics_canvas.fillOval(pos, v_radius, h_radius)
 
     fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = graphics_canvas.drawPolygon(x_points, y_points, points)
+    fun drawPolygon(points: Array<Point>) = graphics_canvas.drawPolygon(points)
     fun fillPolygon(x_points: IntArray, y_points: IntArray, points: Int) = graphics_canvas.fillPolygon(x_points, y_points, points)
+    fun fillPolygon(points: Array<Point>) = graphics_canvas.fillPolygon(points)
     fun drawRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawRect(x, y, width, height)
     fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.drawRoundRect(x, y, width, height, arc_width, arc_height)
     fun fillRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.fillRoundRect(x, y, width, height, arc_width, arc_height)
