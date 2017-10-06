@@ -110,9 +110,21 @@ class Console {
             points[0] = Point(x + width / 2, y)
             points[1] = Point(x + width_ratio_golden, y + height_ratio_1)
             points[2] = Point(x, y + height_ratio_1)
-            points[3] = Point()
-            points[4] = Point(x + width_ratio_golden, y + height)
-
+            points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1 * 1.0)).toInt()) / (2 * width_ratio_golden))
+            points[4] = Point(x + width_ratio_golden / 2, y + height)
+            points[5] = Point(x + width / 2 - (Math.sqrt((width * width + height * height * 1.0))).toInt(), y + height)
+            points[9] = Point(x + width_ratio_golden + width_ratio_1, y + height_ratio_1)
+            points[8] = Point(x + width, y + height_ratio_1)
+            points[7] = Point(x + width / 2 + width_ratio_1 / 2 + width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1 * 1.0)).toInt()) / (2 * width_ratio_golden))
+            points[6] = Point(x + width - width_ratio_golden / 2, y + height)
+            val xs = IntArray(10)
+            val ys = IntArray(10)
+            for ((i, p) in points.withIndex()) {
+                xs[i] = p!!.x
+                ys[i] = p!!.y
+                print(p.x.toString() + " " + p.y.toString())
+            }
+            graphics.drawPolygon(xs, ys, 10)
         }
 
         fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.drawPolygon(x_points, y_points, points) }
