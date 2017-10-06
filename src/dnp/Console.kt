@@ -92,15 +92,15 @@ class Console {
             val xscale = width / 152
             val yscale = height / 140
             val middle = x + width / 2
-            val points = arrayOfNulls<Point>(26)
+            val points = Array(26) { Point() }
             points[0] = Point(middle - xscale * 5, y + height)
             points[1] = Point()
         }
 
         val ratio = (1 + Math.sqrt(5.0)) / 2
 
-        fun drawStar(x: Int, y: Int, width: Int, height: Int) = draw {
-            val points = arrayOfNulls<Point>(10)
+        fun drawStar(x: Int, y: Int, width: Int, height: Int, fill: Boolean = false) = draw {
+            val points = Array(10) { Point() }
             val width_ratio_1_d = width / (2 * ratio + 1)
             val width_ratio_golden = (width_ratio_1_d * ratio).toInt()
             val height_ratio_1_d = height / (ratio + 1)
@@ -110,13 +110,42 @@ class Console {
             points[0] = Point(x + width / 2, y)
             points[1] = Point(x + width_ratio_golden, y + height_ratio_1)
             points[2] = Point(x, y + height_ratio_1)
-            points[3] = Point()
-            points[4] = Point(x + width_ratio_golden, y + height)
-
+            points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4.0 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1)).toInt()) / (2 * width_ratio_golden))
+            points[4] = Point(x + width_ratio_golden / 2, y + height)
+            points[5] = Point(x + width / 2 - (Math.sqrt((width * width + height * height).toDouble())).toInt(), y + height)
+            for (i in 6..9) {
+                points[i].y = points[10 - i].y
+                points[i].x = x + width - (points[10 - i].x - x)
+            }
+            for (i in 0..9) {
+                drawString(i.toString(), points[i].x, points[i].y)
+            }
+            if (fill) fillPolygon(points)
+            else drawPolygon(points)
         }
 
         fun drawPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.drawPolygon(x_points, y_points, points) }
         fun fillPolygon(x_points: IntArray, y_points: IntArray, points: Int) = draw { graphics.fillPolygon(x_points, y_points, points) }
+        fun drawPolygon(points: Array<Point>) = draw {
+            val x = IntArray(points.size)
+            val y = IntArray(points.size)
+            for (i in points.indices) {
+                x[i] = points[i].x
+                y[i] = points[i].y
+            }
+            drawPolygon(x, y, points.size)
+        }
+
+        fun fillPolygon(points: Array<Point>) = draw {
+            val x = IntArray(points.size)
+            val y = IntArray(points.size)
+            for (i in points.indices) {
+                x[i] = points[i].x
+                y[i] = points[i].y
+            }
+            fillPolygon(x, y, points.size)
+        }
+
         fun clearScreen(color: Color = background_color) = draw {
             graphics.color = color
             graphics.fillRect(0, 0, this@Console.width, this@Console.height)
@@ -340,6 +369,7 @@ class Console {
     fun drawRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.drawRoundRect(x, y, width, height, arc_width, arc_height)
     fun fillRoundRect(x: Int, y: Int, width: Int, height: Int, arc_width: Int, arc_height: Int) = graphics_canvas.fillRoundRect(x, y, width, height, arc_width, arc_height)
     fun drawStar(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawStar(x, y, width, height)
+    fun fillStar(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.drawStar(x, y, width, height, fill = true)
     fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
 
     fun fillRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.fillRect(x, y, width, height)
