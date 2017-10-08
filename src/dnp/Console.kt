@@ -20,15 +20,14 @@ class Console {
         val image by lazy { BufferedImage(this@Console.width, this@Console.height, BufferedImage.TYPE_INT_ARGB) }
         val graphics: Graphics2D by lazy { image.createGraphics() }
         var buffered = false
-        lateinit var main: Thread
+        lateinit var main: ThreadGroup
         var show_cursor = false
         var cursor_visible = true
 
         init {
-            val threads = Thread.getAllStackTraces().keys
-            for (thread in threads) {
-                if (thread.name.toLowerCase() == "main") {
-                    main = thread
+            for (thread in Thread.getAllStackTraces().keys) {
+                if (thread.threadGroup.name == "main") {
+                    main = thread.threadGroup
                     break
                 }
             }
@@ -38,7 +37,7 @@ class Console {
                 if (buffered) repaint()
             }
             main_check_thread = timer(period = 100) {
-                if (!main.isAlive) {
+                if (main.activeCount() == 0) {
                     setState(State.FINISHED)
                     drawing_thread.cancel()
                     cursor_thread.cancel()
@@ -120,6 +119,9 @@ class Console {
             for (i in 6..9) {
                 points[i].y = points[10 - i].y
                 points[i].x = x + width - (points[10 - i].x - x)
+            }
+            for (i in points.indices) {
+                drawString(i.toString(), points[i].x, points[i].y)
             }
             if (fill) fillPolygon(points)
             else drawPolygon(points)
