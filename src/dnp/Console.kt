@@ -37,12 +37,17 @@ class Console {
                 if (buffered) repaint()
             }
             main_check_thread = timer(period = 100) {
-                if (main.activeCount() == 0) {
+                /*var threads = main.activeCount() + 5
+                val t = Array(threads) { Thread() }
+                threads = main.enumerate(t)
+                if (t.none { it.name == "main" || it.name.startsWith("Thread-") }) {
                     setState(State.FINISHED)
                     drawing_thread.cancel()
                     cursor_thread.cancel()
                     this.cancel()
-                }
+                } else {
+                    System.out.println(Arrays.toString(t))
+                }*/
             }
             cursor_thread = timer(period = 300) {
                 cursor_visible = !cursor_visible
@@ -113,9 +118,11 @@ class Console {
             points[0] = Point(x + width / 2, y)
             points[1] = Point(x + width_ratio_golden.toInt(), y + height_ratio_1)
             points[2] = Point(x, y + height_ratio_1)
-            points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden.toInt()), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1)).toInt()) / (2 * width_ratio_golden.toInt()))
+            //points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden.toInt()), y + height_ratio_1 + (width_ratio_1 * (Math.sqrt(4 * width_ratio_golden * width_ratio_golden - width_ratio_1 * width_ratio_1)).toInt()) / (2 * width_ratio_golden.toInt()))
+            points[3] = Point(x + width / 2 - width_ratio_1 / 2 - width_ratio_1 * width_ratio_1 / (2 * width_ratio_golden.toInt()), (y + height - height * .381759).toInt())
             points[4] = Point(x + width_ratio_golden.toInt() / 2, y + height)
-            points[5] = Point(x + width / 2, y + height - (width_ratio_golden / 2 * Math.tan(Math.toRadians(36.0))).toInt())
+            points[5] = Point(x + width / 2, (y + height - height * .236068).toInt())
+            //points[5] = Point(x + width / 2, y + height - (width_ratio_golden / 2 * Math.tan(Math.toRadians(36.0))).toInt())
             for (i in 6..9) {
                 points[i].y = points[10 - i].y
                 points[i].x = x + width - (points[10 - i].x - x)
