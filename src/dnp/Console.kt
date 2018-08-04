@@ -105,7 +105,7 @@ class Console {
             points[1] = Point()
         }
 
-        val ratio = (1 + Math.sqrt(5.0)) / 2
+        private val ratio = (1 + Math.sqrt(5.0)) / 2
 
         fun drawStar(x: Int, y: Int, width: Int, height: Int, fill: Boolean = false) = draw {
             val points = Array(10) { Point() }
@@ -126,9 +126,6 @@ class Console {
             for (i in 6..9) {
                 points[i].y = points[10 - i].y
                 points[i].x = x + width - (points[10 - i].x - x)
-            }
-            for (i in points.indices) {
-                drawString(i.toString(), points[i].x, points[i].y)
             }
             if (fill) fillPolygon(points)
             else drawPolygon(points)
@@ -202,7 +199,7 @@ class Console {
     val frame: JFrame
     // Font variables
     var font = Font("monospaced", Font.PLAIN, DEFAULT_FONT_SIZE)
-        @JvmName("SADFASDFSA") private set
+        @JvmName("placeholder") private set
     val font_height: Int
     val font_width: Int
     val font_base: Int
@@ -234,36 +231,39 @@ class Console {
 
     // static variables basically
     companion object {
-        @JvmField
-        var consoles = 0
+        @JvmField var consoles = 0
         const val DEFAULT_ROWS = 25
         const val DEFAULT_COLS = 80
         const val DEFAULT_FONT_SIZE = 14
         const val DEFAULT_TITLE = "Console"
-        @JvmStatic
-        val whitespace = arrayOf('\n', '\t', ' ')
+        @JvmStatic val whitespace = arrayOf('\n', '\t', ' ')
     }
 
     // TODO: this prints
     fun print(text: String?) {
         val text = text ?: "<null>"
         if (text == "\n") {
-            setCursor(current_row + 1, 0)
+            if (current_row == rows - 1) {
+                graphics_canvas.copyArea(0, 0, width, height, 0, -font_height)
+                graphics_canvas.eraseLine()
+                current_col = 0
+            } else setCursor(current_row + 1, 0)
             return
         }
         if (text == "\t") {
             while (++current_col % 4 != 0);
+            return
         }
         for (c in text) {
             if (c != '\n' && c != '\t') {
                 if (current_col == cols) {
-                    setCursor(current_row + 1, 0)
-                    current_col = 0
+                    print("\n")
                 }
                 graphics_canvas.drawText(text = c.toString())
                 current_col++
             } else print(c)
         }
+        System.out.println("printed: $text")
         //System.out.println("printed: " + text)
     }
 
@@ -385,7 +385,6 @@ class Console {
     fun drawString(s: String, x: Int, y: Int) = graphics_canvas.drawString(s, x, y)
 
     fun fillRect(x: Int, y: Int, width: Int, height: Int) = graphics_canvas.fillRect(x, y, width, height)
-
 
     init {
         // Get the input map for key bindings
